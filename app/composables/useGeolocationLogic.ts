@@ -46,6 +46,28 @@ export const useGeolocationLogic = () => {
       return
     }
 
+    // iOS 13以降では、ユーザーの許可が必要
+    if (typeof (DeviceMotionEvent as unknown as { requestPermission?: () => Promise<string> })?.requestPermission === 'function') {
+      (DeviceMotionEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
+        .then((response) => {
+          if (response === 'granted') {
+            _addDeviceMotionListener()
+          }
+          else {
+            geolocationStore.getAccelerationError = '加速度の使用が許可されませんでした'
+          }
+        })
+        .catch((error) => {
+          geolocationStore.getAccelerationError = `エラーが発生しました。${error.message}`
+        })
+    }
+    // iOS 13未満や他のブラウザでは、直接リスナーを追加
+    else {
+      _addDeviceMotionListener()
+    }
+  }
+
+  const _addDeviceMotionListener = () => {
     window.addEventListener('devicemotion', (event) => {
       const acceleration = event.acceleration
       if (acceleration) {
