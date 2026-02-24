@@ -116,40 +116,40 @@
             <div>
               <p>
                 経度:
-                {{ geolocationStore.latest.getCurrentPositionResult?.coords.longitude ?? '-' }}
+                {{ displayedGeolocationResult.getCurrentPositionResult?.coords.longitude ?? '-' }}
               </p>
               <p>
                 緯度:
-                {{ geolocationStore.latest.getCurrentPositionResult?.coords.latitude ?? '-' }}
+                {{ displayedGeolocationResult.getCurrentPositionResult?.coords.latitude ?? '-' }}
               </p>
               <p>
                 精度:
-                {{ geolocationStore.latest.getCurrentPositionResult?.coords.accuracy ?? '-' }}
+                {{ displayedGeolocationResult.getCurrentPositionResult?.coords.accuracy ?? '-' }}
                 m
               </p>
               <p>
                 高度:
-                {{ geolocationStore.latest.getCurrentPositionResult?.coords.altitude ?? '-' }}
+                {{ displayedGeolocationResult.getCurrentPositionResult?.coords.altitude ?? '-' }}
                 m
               </p>
               <p>
                 高度精度:
-                {{ geolocationStore.latest.getCurrentPositionResult?.coords.altitudeAccuracy ?? '-' }}
+                {{ displayedGeolocationResult.getCurrentPositionResult?.coords.altitudeAccuracy ?? '-' }}
                 m
               </p>
               <p>
                 方位:
-                {{ geolocationStore.latest.getCurrentPositionResult?.coords.heading ?? '-' }}
+                {{ displayedGeolocationResult.getCurrentPositionResult?.coords.heading ?? '-' }}
                 度
               </p>
               <p>
                 速度:
                 {{
-                  geolocationStore.latest.getCurrentPositionResult?.coords.speed === null || geolocationStore.latest.getCurrentPositionResult?.coords.speed === undefined
+                  displayedGeolocationResult.getCurrentPositionResult?.coords.speed === null || displayedGeolocationResult.getCurrentPositionResult?.coords.speed === undefined
 
                     ? '-'
                     : convertSpeedToKmPerHour(
-                      geolocationStore.latest.getCurrentPositionResult?.coords
+                      displayedGeolocationResult.getCurrentPositionResult?.coords
                         .speed ?? 0,
                     )
                 }}
@@ -179,50 +179,50 @@
             <p>
               経度:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.longitude ?? '-'
+                displayedGeolocationResult.watchPositionResult?.coords.longitude ?? '-'
               }}
             </p>
             <p>
               緯度:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.latitude ?? '-'
+                displayedGeolocationResult.watchPositionResult?.coords.latitude ?? '-'
               }}
             </p>
             <p>
               精度:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.accuracy ?? '-'
+                displayedGeolocationResult.watchPositionResult?.coords.accuracy ?? '-'
               }}
               m
             </p>
             <p>
               高度:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.altitude ?? '-'
+                displayedGeolocationResult.watchPositionResult?.coords.altitude ?? '-'
               }}
               m
             </p>
             <p>
               高度精度:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.altitudeAccuracy ?? '-'
+                displayedGeolocationResult.watchPositionResult?.coords.altitudeAccuracy ?? '-'
               }}
               m
             </p>
             <p>
               方位:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.heading ?? '-'
+                displayedGeolocationResult.watchPositionResult?.coords.heading ?? '-'
               }}
               度
             </p>
             <p>
               速度:
               {{
-                geolocationStore.latest.watchPositionResult?.coords.speed === null || geolocationStore.latest.watchPositionResult?.coords.speed === undefined
+                displayedGeolocationResult.watchPositionResult?.coords.speed === null || displayedGeolocationResult.watchPositionResult?.coords.speed === undefined
                   ? '-'
                   : convertSpeedToKmPerHour(
-                    geolocationStore.latest.watchPositionResult?.coords
+                    displayedGeolocationResult.watchPositionResult?.coords
                       .speed ?? 0,
                   )
               }}
@@ -250,17 +250,17 @@
             </p>
             <p>
               X:
-              {{ geolocationStore.latest.acceleration?.x ?? '-' }}
+              {{ displayedGeolocationResult.acceleration?.x ?? '-' }}
               m/s²
             </p>
             <p>
               Y:
-              {{ geolocationStore.latest.acceleration?.y ?? '-' }}
+              {{ displayedGeolocationResult.acceleration?.y ?? '-' }}
               m/s²
             </p>
             <p>
               Z:
-              {{ geolocationStore.latest.acceleration?.z ?? '-' }}
+              {{ displayedGeolocationResult.acceleration?.z ?? '-' }}
               m/s²
             </p>
           </v-card-text>
@@ -322,6 +322,12 @@ const timeout = ref(10000)
 const maximumAge = ref(0)
 /** getCurrentPositionの実行間隔（ミリ秒） */
 const getCurrentPositionInterval = ref(1000)
+const samplingIntervalAsNumber = computed(() => Number(samplingInterval.value))
+const displayedGeolocationResult = computed(() =>
+  samplingIntervalAsNumber.value > 0
+    ? geolocationStore.samplesLatest
+    : geolocationStore.latest,
+)
 
 onMounted(async () => {
   // Google Maps APIの読み込み
@@ -408,9 +414,13 @@ const startLocationTracking = () => {
     timeout.value,
     maximumAge.value,
   )
-  geolocationController.startSamplingPosition(
-    samplingInterval.value,
-  )
+
+  // サンプリング間隔が0より大きい場合は、サンプリングを開始する
+  if (samplingIntervalAsNumber.value > 0) {
+    geolocationController.startSamplingPosition(
+      samplingIntervalAsNumber.value,
+    )
+  }
 }
 
 /**
