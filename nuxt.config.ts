@@ -6,6 +6,16 @@ export default defineNuxtConfig({
     'vuetify-nuxt-module',
   ],
   devtools: { enabled: true },
+  runtimeConfig: {
+    public: {
+      scripts: {
+        googleMaps: {
+          apiKey: '',
+          mapId: '',
+        },
+      },
+    },
+  },
   compatibilityDate: '2025-07-15',
   eslint: {
     config: {

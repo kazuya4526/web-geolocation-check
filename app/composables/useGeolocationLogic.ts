@@ -1,40 +1,76 @@
+/**
+ * 位置情報の測位や加速度を取得するComposable
+ */
 export const useGeolocationLogic = () => {
   const geolocationStore = useGeolocationStore()
 
   /**
-   * getCurrentPositionを定期的に呼び出して位置情報を更新する
-   *
-   * @param interval
-   */
-  const startWatchingCurrentPosition = (interval: number) => {
-    setInterval(() => {
-      _getCurrentPosition()
-    }, interval)
-  }
-
-  /**
    * watchPositionを使用して位置情報をリアルタイムで更新する
+   *
+   * @param enableHighAccuracy 高精度な位置情報を取得するかどうか
+   * @param timeout 位置情報の取得にかかる最大時間（ミリ秒）
+   * @param maximumAge キャッシュされた位置情報を許可する時間（ミリ秒）
    */
-  const startWatchingPosition = () => {
+  const startWatchingPosition = (
+    enableHighAccuracy = true,
+    timeout = 5000,
+    maximumAge = 0,
+  ) => {
     if (!navigator.geolocation) {
-      geolocationStore.watchPositionError = 'GeolocationAPIがサポートされていません'
+      geolocationStore.latest.watchPositionError = 'GeolocationAPIがサポートされていません'
       return
     }
 
-    navigator.geolocation.watchPosition(
+    geolocationStore.latest.watchId = navigator.geolocation.watchPosition(
       (position) => {
-        geolocationStore.watchPositionError = ''
-        geolocationStore.setGeolocation(position, 'watchPosition')
+        geolocationStore.latest.watchPositionError = ''
+        geolocationStore.latest.watchPositionResult = position
       },
       (error) => {
-        geolocationStore.watchPositionError = `エラーが発生しました。${error.message}`
+        geolocationStore.latest.watchPositionError = `エラーが発生しました。${error.message}`
       },
       {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+        enableHighAccuracy,
+        timeout,
+        maximumAge,
       },
     )
+  }
+
+  /**
+   * 現在の位置情報を一度だけ取得して更新する
+   *
+   * @param enableHighAccuracy 高精度な位置情報を取得するかどうか
+   * @param timeout 位置情報の取得にかかる最大時間（ミリ秒）
+   * @param maximumAge キャッシュされた位置情報を許可する時間（ミリ秒）
+   * @returns 位置情報の結果とエラーメッセージ
+   */
+  const getCurrentPosition = async (
+    enableHighAccuracy = true,
+    timeout = 5000,
+    maximumAge = 0,
+  ): Promise<void> => {
+    if (!navigator.geolocation) {
+      geolocationStore.latest.getCurrentPositionError = 'GeolocationAPIがサポートされていません'
+      return
+    }
+
+    return new Promise(resolve => navigator.geolocation.getCurrentPosition(
+      (position) => {
+        geolocationStore.latest.getCurrentPositionError = ''
+        geolocationStore.latest.getCurrentPositionResult = position
+        resolve()
+      },
+      (error) => {
+        geolocationStore.latest.getCurrentPositionError = `エラーが発生しました。${error.message}`
+        resolve()
+      },
+      {
+        enableHighAccuracy,
+        timeout,
+        maximumAge,
+      },
+    ))
   }
 
   /**
@@ -42,7 +78,7 @@ export const useGeolocationLogic = () => {
    */
   const startWatchingAcceleration = () => {
     if (!window.DeviceMotionEvent) {
-      geolocationStore.getAccelerationError = 'DeviceMotionEventがサポートされていません'
+      geolocationStore.latest.getAccelerationError = 'DeviceMotionEventがサポートされていません'
       return
     }
 
@@ -54,11 +90,11 @@ export const useGeolocationLogic = () => {
             _addDeviceMotionListener()
           }
           else {
-            geolocationStore.getAccelerationError = '加速度の使用が許可されませんでした'
+            geolocationStore.latest.getAccelerationError = '加速度の使用が許可されませんでした'
           }
         })
         .catch((error) => {
-          geolocationStore.getAccelerationError = `エラーが発生しました。${error.message}`
+          geolocationStore.latest.getAccelerationError = `エラーが発生しました。${error.message}`
         })
     }
     // iOS 13未満や他のブラウザでは、直接リスナーを追加
@@ -67,46 +103,24 @@ export const useGeolocationLogic = () => {
     }
   }
 
+  /**
+   * DeviceMotionEventのリスナーを追加して加速度を更新する
+   */
   const _addDeviceMotionListener = () => {
     window.addEventListener('devicemotion', (event) => {
       const acceleration = event.acceleration
       if (acceleration) {
-        geolocationStore.setAcceleration(acceleration)
+        geolocationStore.latest.acceleration = acceleration
       }
       else {
-        geolocationStore.getAccelerationError = '加速度データが利用できません'
+        geolocationStore.latest.getAccelerationError = '加速度データが利用できません'
       }
     })
   }
 
-  /**
-   * 現在の位置情報を一度だけ取得して更新する
-   */
-  const _getCurrentPosition = () => {
-    if (!navigator.geolocation) {
-      geolocationStore.getCurrentPositionError = 'GeolocationAPIがサポートされていません'
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        geolocationStore.getCurrentPositionError = ''
-        geolocationStore.setGeolocation(position, 'getCurrentPosition')
-      },
-      (error) => {
-        geolocationStore.getCurrentPositionError = `エラーが発生しました。${error.message}`
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
-      },
-    )
-  }
-
   return {
     startWatchingPosition,
-    startWatchingCurrentPosition,
+    getCurrentPosition,
     startWatchingAcceleration,
   }
 }

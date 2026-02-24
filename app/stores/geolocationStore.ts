@@ -1,31 +1,31 @@
 export const useGeolocationStore = defineStore('geolocation', () => {
-  const geolocationByGetCurrentPosition = ref<GeolocationPosition | null>(null);
-  const getCurrentPositionError = ref<string>('');
-  const geolocationByWatchPosition = ref<GeolocationPosition | null>(null);
-  const watchPositionError = ref<string>('');
-  const acceleration = ref<DeviceMotionEventAcceleration | null>(null);
-  const getAccelerationError = ref<string>('');
-
-  const setGeolocation = (geolocation: GeolocationPosition, type: 'getCurrentPosition' | 'watchPosition') => {
-    if (type === 'getCurrentPosition') {
-      geolocationByGetCurrentPosition.value = geolocation;
-    } else {
-      geolocationByWatchPosition.value = geolocation;
-    }
+  const latest = {
+    getCurrentPositionResult: null as GeolocationPosition | null,
+    watchPositionResult: null as GeolocationPosition | null,
+    acceleration: null as DeviceMotionEventAcceleration | null,
+    watchId: null as number | null,
+    getCurrentPositionError: '',
+    watchPositionError: '',
+    getAccelerationError: '',
+  }
+  const samples = {
+    getCurrentPositionResults: [] as (GeolocationPosition | null)[],
+    watchPositionResults: [] as (GeolocationPosition | null)[],
+    accelerationSamples: [] as (DeviceMotionEventAcceleration | null)[],
+  }
+  const samplesLatest = {
+    getCurrentPositionResult: null as GeolocationPosition | null,
+    watchPositionResult: null as GeolocationPosition | null,
+    acceleration: null as DeviceMotionEventAcceleration | null,
   }
 
-  const setAcceleration = (accelerationData: DeviceMotionEventAcceleration) => {
-    acceleration.value = accelerationData;
-  }
+  /** 測位中かどうか */
+  const isTracking = ref(false)
 
   return {
-    geolocationByGetCurrentPosition,
-    geolocationByWatchPosition,
-    acceleration,
-    getCurrentPositionError,
-    watchPositionError,
-    getAccelerationError,
-    setGeolocation,
-    setAcceleration,
+    latest,
+    samples,
+    samplesLatest,
+    isTracking,
   }
-});
+})
