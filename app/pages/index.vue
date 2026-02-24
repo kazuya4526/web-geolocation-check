@@ -16,7 +16,7 @@
         inputmode="numeric"
         hide-details
       />
-      <span class="ml-2">秒/回</span>
+      <span class="ml-2">ミリ秒/回</span>
     </div>
     <div class="d-flex align-center mt-2">
       <label
@@ -72,24 +72,6 @@
     </div>
     <div class="d-flex align-center mt-2">
       <label
-        for="sampling-interval"
-        class="setting-label"
-      >
-        サンプリング間隔:
-      </label>
-      <v-text-field
-        id="sampling-interval"
-        v-model="samplingInterval"
-        variant="outlined"
-        color="primary"
-        class="ml-4 setting-value"
-        inputmode="numeric"
-        hide-details
-      />
-      <span class="ml-2">秒/回</span>
-    </div>
-    <div class="d-flex align-center mt-2">
-      <label
         for="get-current-position-interval"
         class="setting-label"
       >
@@ -104,7 +86,7 @@
         inputmode="numeric"
         hide-details
       />
-      <span class="ml-2">秒/回</span>
+      <span class="ml-2">ミリ秒/回</span>
     </div>
     <v-btn
       v-if="!geolocationStore.isTracking"
