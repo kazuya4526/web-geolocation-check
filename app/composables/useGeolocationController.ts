@@ -43,7 +43,7 @@ export const useGeolocationController = () => {
   const startSamplingPosition = (
     interval = 1000,
   ) => {
-    setInterval(() => {
+    geolocationStore.samplingIntervalTimeout = setInterval(() => {
       // 測位が開始されていない場合はサンプリングを行わない
       if (!geolocationStore.isTracking) {
         return
@@ -69,6 +69,10 @@ export const useGeolocationController = () => {
     if (geolocationStore.latest.watchId !== null) {
       navigator.geolocation.clearWatch(geolocationStore.latest.watchId)
       geolocationStore.latest.watchId = null
+    }
+    if (geolocationStore.samplingIntervalTimeout !== null) {
+      clearInterval(geolocationStore.samplingIntervalTimeout)
+      geolocationStore.samplingIntervalTimeout = null
     }
   }
 

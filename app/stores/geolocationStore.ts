@@ -21,11 +21,14 @@ export const useGeolocationStore = defineStore('geolocation', () => {
 
   /** 測位中かどうか */
   const isTracking = ref(false)
+  /** サンプリングのInterval */
+  const samplingIntervalTimeout = ref<NodeJS.Timeout | null>(null)
 
   return {
     latest,
     samples,
     samplesLatest,
     isTracking,
+    samplingIntervalTimeout,
   }
 })
