@@ -111,6 +111,7 @@ export const useGeolocationLogic = () => {
       const acceleration = event.acceleration
       if (acceleration) {
         geolocationStore.latest.acceleration = acceleration
+        geolocationStore.latest.getAccelerationError = ''
       }
       else {
         geolocationStore.latest.getAccelerationError = '加速度データが利用できません'

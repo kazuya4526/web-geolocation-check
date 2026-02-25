@@ -18,6 +18,7 @@
       />
       <span class="ml-2">ミリ秒/回</span>
     </div>
+    <p>※0が設定された場合はサンプリングは行わず、最新の測位結果のみを表示します。</p>
     <div class="d-flex align-center mt-2">
       <label
         for="enable-high-accuracy"
@@ -103,6 +104,22 @@
       @click="geolocationController.stopLocationTracking()"
     >
       測位を停止
+    </v-btn>
+    <v-btn
+      class="mt-4 ml-4"
+      color="secondary"
+      :disabled="!geolocationStore.samples.getCurrentPositionResults.length && !geolocationStore.samples.watchPositionResults.length && !geolocationStore.samples.accelerationSamples.length"
+      @click="geolocationController.downloadResultsAsZIP()"
+    >
+      測位結果をZIPでダウンロード
+    </v-btn>
+    <v-btn
+      class="mt-4 ml-4"
+      color="error"
+      :disabled="!geolocationStore.samples.getCurrentPositionResults.length && !geolocationStore.samples.watchPositionResults.length && !geolocationStore.samples.accelerationSamples.length"
+      @click="geolocationController.resetSamples()"
+    >
+      測位結果をリセット
     </v-btn>
     <!-- getCurrentPosition、watchPosition、加速度センサでの取得結果を横並びで表示（単位も表示） -->
     <div
@@ -356,7 +373,7 @@ watch(
     geolocationStore.latest.getCurrentPositionResult,
   ],
   async (newVal) => {
-    if (newVal[0] && map) {
+    if (newVal[0] && newVal[0].coords && map) {
       // 中央を現在地に移動
       const { latitude, longitude, accuracy } = newVal[0].coords
       const newCenter = { lat: latitude, lng: longitude }

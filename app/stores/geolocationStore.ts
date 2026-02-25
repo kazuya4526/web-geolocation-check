@@ -1,4 +1,13 @@
 export const useGeolocationStore = defineStore('geolocation', () => {
+  type PositionSample = {
+    samplingDatetime: Date
+    result: GeolocationPosition | null
+  }
+  type AccelerationSample = {
+    samplingDatetime: Date
+    result: DeviceMotionEventAcceleration | null
+  }
+
   const latest = {
     getCurrentPositionResult: null as GeolocationPosition | null,
     watchPositionResult: null as GeolocationPosition | null,
@@ -9,9 +18,9 @@ export const useGeolocationStore = defineStore('geolocation', () => {
     getAccelerationError: '',
   }
   const samples = {
-    getCurrentPositionResults: [] as (GeolocationPosition | null)[],
-    watchPositionResults: [] as (GeolocationPosition | null)[],
-    accelerationSamples: [] as (DeviceMotionEventAcceleration | null)[],
+    getCurrentPositionResults: [] as PositionSample[],
+    watchPositionResults: [] as PositionSample[],
+    accelerationSamples: [] as AccelerationSample[],
   }
   const samplesLatest = {
     getCurrentPositionResult: null as GeolocationPosition | null,

@@ -1,3 +1,5 @@
+import JSZip from 'jszip'
+
 /**
  * 位置情報の測位や加速度の取得を制御するComposable
  */
@@ -50,9 +52,18 @@ export const useGeolocationController = () => {
       }
 
       // 最新の位置情報をサンプル履歴として保存する
-      geolocationStore.samples.getCurrentPositionResults.push(geolocationStore.latest.getCurrentPositionResult ?? null)
-      geolocationStore.samples.watchPositionResults.push(geolocationStore.latest.watchPositionResult ?? null)
-      geolocationStore.samples.accelerationSamples.push(geolocationStore.latest.acceleration ?? null)
+      geolocationStore.samples.getCurrentPositionResults.push({
+        samplingDatetime: new Date(),
+        result: geolocationStore.latest.getCurrentPositionResult,
+      })
+      geolocationStore.samples.watchPositionResults.push({
+        samplingDatetime: new Date(),
+        result: geolocationStore.latest.watchPositionResult,
+      })
+      geolocationStore.samples.accelerationSamples.push({
+        samplingDatetime: new Date(),
+        result: geolocationStore.latest.acceleration,
+      })
 
       // 最新の位置情報をサンプルの最新として保存する
       geolocationStore.samplesLatest.getCurrentPositionResult = geolocationStore.latest.getCurrentPositionResult
@@ -76,11 +87,101 @@ export const useGeolocationController = () => {
     }
   }
 
+  /**
+   * サンプリング結果をリセットする関数
+   */
+  const resetSamples = () => {
+    geolocationStore.samples.getCurrentPositionResults = []
+    geolocationStore.samples.watchPositionResults = []
+    geolocationStore.samples.accelerationSamples = []
+    geolocationStore.samplesLatest.getCurrentPositionResult = null
+    geolocationStore.samplesLatest.watchPositionResult = null
+    geolocationStore.samplesLatest.acceleration = null
+  }
+
+  /**
+   * 測位結果をそれぞれCSV形式に変換し、ZIPファイルとしてダウンロードする関数
+   */
+  const downloadResultsAsZIP = () => {
+    const header = 'サンプリング時刻,緯度,経度,精度（m）,高度（m）,高度精度（m）,方位（°）,速度（m/s）,タイムスタンプ\n'
+
+    // getCurrentPosition
+    const getCurrentPositionResultRows = geolocationStore.samples.getCurrentPositionResults.map((sample) => {
+      const position = sample.result
+      if (!position) {
+        return '---,---,---,---,---,---,---,---,---'
+      }
+      const { timestamp, coords } = position
+      const { samplingDatetime } = sample
+      return `${_dateObjectToDateTimeString(samplingDatetime)},${coords.latitude},${coords.longitude},${coords.accuracy},${coords.altitude ?? '---'},${coords.altitudeAccuracy ?? '---'},${coords.heading ?? '---'},${coords.speed ?? '---'},${timestamp}`
+    })
+
+    // watchPosition
+    const watchPositionResultRows = geolocationStore.samples.watchPositionResults.map((sample) => {
+      const position = sample.result
+      if (!position) {
+        return '---,---,---,---,---,---,---,---,---'
+      }
+      const { timestamp, coords } = position
+      const { samplingDatetime } = sample
+      return `${_dateObjectToDateTimeString(samplingDatetime)},${coords.latitude},${coords.longitude},${coords.accuracy},${coords.altitude ?? '---'},${coords.altitudeAccuracy ?? '---'},${coords.heading ?? '---'},${coords.speed ?? '---'},${timestamp}`
+    })
+
+    // acceleration
+    const headerForAcceleration = 'サンプリング時刻,x,y,z\n'
+    const accelerationRows = geolocationStore.samples.accelerationSamples.map((sample) => {
+      const acceleration = sample.result
+      if (!acceleration) {
+        return '---,---,---,---'
+      }
+      const samplingDatetime = sample.samplingDatetime
+      return `${_dateObjectToDateTimeString(samplingDatetime)},${acceleration.x ?? '---'},${acceleration.y ?? '---'},${acceleration.z ?? '---'}`
+    })
+
+    const zip = new JSZip()
+    zip.file('getCurrentPositionResults.csv', header + getCurrentPositionResultRows.join('\n'))
+    zip.file('watchPositionResults.csv', header + watchPositionResultRows.join('\n'))
+    zip.file('accelerationSamples.csv', headerForAcceleration + accelerationRows.join('\n'))
+
+    zip.generateAsync({ type: 'blob' }).then((content) => {
+      const url = URL.createObjectURL(content)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'geolocation_results.zip'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    })
+  }
+
+  /**
+   * 日付オブジェクトをyyyyMMddHHmmssSSS形式の文字列に変換する関数
+   *
+   * @param date 変換する日付オブジェクト
+   * @returns 変換された日付文字列
+   */
+  const _dateObjectToDateTimeString = (date: Date | null): string => {
+    if (!date) {
+      return '---'
+    }
+    const yyyy = date.getFullYear().toString()
+    const MM = (date.getMonth() + 1).toString().padStart(2, '0')
+    const dd = date.getDate().toString().padStart(2, '0')
+    const HH = date.getHours().toString().padStart(2, '0')
+    const mm = date.getMinutes().toString().padStart(2, '0')
+    const ss = date.getSeconds().toString().padStart(2, '0')
+    const SSS = date.getMilliseconds().toString().padStart(3, '0')
+    return `${yyyy}${MM}${dd}${HH}${mm}${ss}${SSS}`
+  }
+
   return {
     startGeolocationByGetCurrentPosition,
     startWatchingPosition,
     startWatchingAcceleration,
     startSamplingPosition,
     stopLocationTracking,
+    downloadResultsAsZIP,
+    resetSamples,
   }
 }
